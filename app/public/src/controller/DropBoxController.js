@@ -5,12 +5,14 @@ class DropBoxController {
         this.inputFilesEl = document.querySelector('#files');
         this.snackModalEl = document.querySelector('#react-snackbar-root');
         this.progressBarEl = this.snackModalEl.querySelector('.mc-progress-bar-fg');
-        this.nameFileEl = document.querySelector('.filename');
-        this.timeleftEl = document.querySelector('.timeleft');
+        this.nameFileEl = this.snackModalEl.querySelector('.filename');
+        this.timeleftEl = this.snackModalEl.querySelector('.timeleft');
+        this.listFilesEl = document.querySelector('#list-of-files-and-directories');
 
         this.connectFirebase();
 
         this.initEvents();
+        this.readFiles();
 
     }
 
@@ -51,7 +53,7 @@ class DropBoxController {
 
                 this.uploadComplete();
                 console.log(err);
-                
+
             });
 
             this.modalShow();
@@ -156,7 +158,7 @@ class DropBoxController {
     }
 
     getFileIconView(file) {
-        switch (file) {
+        switch (file.type) {
             case 'folder':
                 return `
                         <svg width="160" height="160" viewBox="0 0 160 160" class="mc-icon-template-content tile__preview tile__preview--icon">
@@ -321,12 +323,46 @@ class DropBoxController {
         }
     }
 
-    getFileView(file) {
-        return `
-            <li>
-                ${this.getFileIconView(file)}
-                <div class="name text-center">${file.name}</div>
-            </li>
+    getFileView(file, key) {
+
+        let li = document.createElement('li');
+
+        li.dataset.key = key;
+
+        li.innerHTML = `
+            ${this.getFileIconView(file)}
+            <div class="name text-center">${file.name}</div>
         `;
+
+        this.initEventsLi(li);
+
+        return li;
+
+    }
+
+    readFiles() {
+
+        this.getFirebaseRef().on('value', snapshot => {
+
+            this.listFilesEl.innerHTML = ' ';
+
+            snapshot.forEach(snap => {
+                let key = snap.key;
+                let data = snap.val();
+
+                this.listFilesEl.appendChild(this.getFileView(data, key));
+
+            });
+
+        });
+    }
+
+    initEventsLi(li) {
+
+        li.addEventListener('click', (e) => {
+
+            li.classList.toggle('selected');
+
+        });
     }
 }
